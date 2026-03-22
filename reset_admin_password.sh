@@ -57,19 +57,45 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 info "Checking if admin user exists..."
 
-USER_EXISTS=$(npx prisma db execute --stdin <<'SQL' | tail -n +2 | head -1
-SELECT user_id FROM users WHERE email = '$ADMIN_EMAIL' LIMIT 1;
-SQL
-)
+# Check user by counting
+USER_COUNT=$(npx prisma db execute --stdin --json 2>/dev/null | grep -o '"rowCount":[0-9]*' | grep -o '[0-9]*' || echo "0")
 
-if [ -z "$USER_EXISTS" ] || [ "$USER_EXISTS" == "" ]; then
+if [ "$USER_COUNT" == "0" ]; then
     warn "Admin user does not exist"
-    info "You need to seed demo data first:"
-    echo "  sudo ./seed_demo_data.sh"
-    exit 1
-fi
+    info "Attempting to create admin user..."
 
-success "Admin user found"
+    # Create admin user directly
+    npx prisma db execute --stdin <<SQL
+INSERT INTO users (user_id, tenant_id, employee_id, email, password_hash, is_active, created_at, updated_at)
+VALUES (
+  'demo-user-001',
+  'demo-tenant-001',
+  'demo-emp-001',
+  '$ADMIN_EMAIL',
+  '\$2b\$12\$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhNj/L4sCFA/8E6iPv9zTw',
+  true,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (email) DO UPDATE SET
+  password_hash = '\$2b\$12\$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhNj/L4sCFA/8E6iPv9zTw',
+  updated_at = NOW(),
+  is_active = true;
+SQL
+
+    success "Admin user created"
+
+    # Assign admin role
+    npx prisma db execute --stdin <<SQL
+INSERT INTO user_roles (user_id, role_id, assigned_at)
+VALUES ('demo-user-001', 'demo-role-001', NOW())
+ON CONFLICT DO NOTHING;
+SQL
+
+    success "Admin role assigned"
+else
+    success "Admin user found"
+fi
 
 # ============================================================
 # Generate new password hash
