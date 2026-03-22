@@ -20,6 +20,7 @@ import { attendanceRouter } from './modules/attendance/attendanceController';
 import { roleRouter } from './modules/roles/roleController';
 import { locationRouter } from './modules/location/locationController';
 import { reportRouter } from './modules/report/reportController';
+import * as whatsappController from './modules/whatsapp/whatsappController';
 
 // Create Express app
 const app = express();
@@ -103,6 +104,12 @@ app.use('/api/attendance', attendanceRouter);
 app.use('/api/roles', roleRouter);
 app.use('/api/locations', locationRouter);
 app.use('/api/reports', reportRouter);
+
+// WhatsApp webhook routes (no auth/CSRF required)
+app.get('/api/webhook/whatsapp/meta', whatsappController.verifyMetaWebhook);
+app.post('/api/webhook/whatsapp/meta', whatsappController.handleMetaWebhook);
+app.post('/api/webhook/whatsapp/fonnte', whatsappController.handleFonnteWebhook);
+app.post('/api/webhook/whatsapp/wablas', whatsappController.handleWablasWebhook);
 
 // Error handling middleware
 app.use(errorHandler);

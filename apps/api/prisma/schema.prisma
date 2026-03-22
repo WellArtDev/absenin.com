@@ -31,6 +31,7 @@ model Tenant {
   office_locations OfficeLocation[]
   attendance_records AttendanceRecord[]
   subscriptions    TenantSubscription[]
+  whatsapp_integrations WhatsAppIntegration[]
 
   @@index([slug])
   @@index([created_at])
@@ -129,6 +130,7 @@ model Employee {
   full_name        String
   email            String?
   phone            String?
+  whatsapp_phone   String?  @unique // WhatsApp phone number for commands
   division_id      String?
   position_id      String?
   is_active        Boolean  @default(true)
@@ -148,6 +150,7 @@ model Employee {
   @@index([division_id])
   @@index([position_id])
   @@index([tenant_id, is_active])
+  @@index([whatsapp_phone])
   @@map("employees")
 }
 
@@ -346,4 +349,56 @@ model SelfieUpload {
   @@index([attendance_record_id])
   @@index([attendance_record_id, upload_type])
   @@map("selfie_uploads")
+}
+
+// ============================================
+// WhatsApp Integration
+// ============================================
+
+model WhatsAppIntegration {
+  integration_id   String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  provider         String   // 'meta', 'fonnte', 'wablas'
+  phone_number     String   // WhatsApp business number
+  api_key          String   @default("")
+  webhook_url      String   @default("")
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  events           WhatsAppEvent[]
+
+  @@unique([tenant_id, provider])
+  @@index([provider])
+  @@index([is_active])
+  @@map("whatsapp_integrations")
+}
+
+model WhatsAppEvent {
+  event_id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  integration_id   String?
+  provider         String   // 'meta', 'fonnte', 'wablas'
+  phone_number     String
+  message_id       String   // Provider message ID for deduplication
+  command          String   // 'HADIR', 'PULANG', 'STATUS', 'LEMBUR', 'SELESAI_LEMBUR'
+  request_payload  Json
+  response_text    String?
+  status           String   @default("processing") // 'processing', 'success', 'failed'
+  error_message    String?
+  processed_at     DateTime?
+  created_at       DateTime @default(now())
+
+  // Relations
+  integration      WhatsAppIntegration? @relation(fields: [integration_id], references: [integration_id], onDelete: SetNull)
+
+  @@unique([tenant_id, provider, message_id]) // Idempotency scoped to tenant + provider + message
+  @@index([tenant_id, phone_number])
+  @@index([tenant_id, provider])
+  @@index([message_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("whatsapp_events")
 }
