@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "lint": "eslint \"src/**/*.ts\" --max-warnings=0",
     "test": "echo 'No tests configured for API package'",
+    "test:functional": "bash scripts/test-functional.sh",
     "test:integration": "jest tests/integration --detectOpenHandles",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
