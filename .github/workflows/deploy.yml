@@ -76,7 +76,7 @@ jobs:
           SSH_HOST: ${{ secrets.STAGING_HOST }}
           SSH_PORT: ${{ secrets.STAGING_PORT }}
           SSH_USER: ${{ secrets.STAGING_USER }}
-          APP_DIR: ${{ secrets.STAGING_APP_DIR }}
+          APP_DIR: ${{ secrets.STAGING_APP_DIR || '/var/www/absenin' }}
         run: |
           set -e
           mkdir -p ~/.ssh
