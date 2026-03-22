@@ -91,7 +91,12 @@ jobs:
             git fetch --all
             git reset --hard origin/main
 
-            # Install dependencies
+            # Fix node_modules permissions
+            sudo chown -R $USER:$(id -gn) node_modules 2>/dev/null || true
+            sudo chown -R $USER:$(id -gn) .pnpm 2>/dev/null || true
+            sudo chmod -R u+w node_modules 2>/dev/null || true
+
+            # Install dependencies as regular user (not sudo)
             command -v pnpm >/dev/null 2>&1 || corepack enable && corepack prepare pnpm@10 --activate
 
             # Set CI environment variable for pnpm
