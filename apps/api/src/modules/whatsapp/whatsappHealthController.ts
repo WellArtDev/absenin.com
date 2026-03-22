@@ -160,7 +160,8 @@ async function checkProviderHealth(provider: string): Promise<{
       active: integration.is_active,
       configured: hasApiKey
     };
-  } catch (_error) {  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_error) {
     return {
       status: 'error',
       active: false,
