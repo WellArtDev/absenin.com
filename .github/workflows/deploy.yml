@@ -126,7 +126,7 @@ jobs:
 
       - name: Check API Health
         run: |
-          curl -f https://staging.absenin.com/api/health || exit 1
+          curl -f https://staging.absenin.com/health || exit 1
           echo "✅ API health check passed"
 
       - name: Check WhatsApp Integration Health
