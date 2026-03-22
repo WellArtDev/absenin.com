@@ -12,7 +12,9 @@
       "cache": false,
       "persistent": true
     },
-    "type-check": {},
+    "type-check": {
+      "dependsOn": ["^build"]
+    },
     "db:generate": {
       "cache": false
     },
