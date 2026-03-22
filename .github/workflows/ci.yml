@@ -67,6 +67,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @absenin/api db:generate
       - run: pnpm build
 
   test-whatsapp-functional:
@@ -138,12 +139,6 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
-
-      - name: Validate Prisma Schema
-        run: |
-          cd apps/api
-          npx prisma validate
-          echo "✅ Prisma schema is valid"
 
       - name: Format Prisma Schema
         run: |
