@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
@@ -9,39 +9,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const initializeCsrfToken = async () => {
-      try {
-        const response = await fetch('/api/auth/csrf-token', {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        const data = await response.json();
-        if (data.success && data.data?.csrfToken) {
-          sessionStorage.setItem('csrfToken', data.data.csrfToken);
-        }
-      } catch (err) {
-        console.error('Failed to initialize CSRF token:', err);
-      }
-    };
-
-    initializeCsrfToken();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const csrfToken = sessionStorage.getItem('csrfToken');
-
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({ email, password })
