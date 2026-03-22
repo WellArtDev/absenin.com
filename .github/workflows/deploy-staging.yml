@@ -23,6 +23,7 @@ jobs:
 
       - run: npm i -g pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @absenin/api db:generate
       - run: pnpm lint
       - run: pnpm type-check
       - run: pnpm test
