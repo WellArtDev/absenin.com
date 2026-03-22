@@ -59,6 +59,39 @@ success() {
 }
 
 # ============================================================
+# Database Migration
+# ============================================================
+
+migrate_database() {
+    log "Running database migrations..."
+
+    cd /var/www/$SERVICE_NAME || {
+        error "Failed to change directory to /var/www/$SERVICE_NAME"
+        return 1
+    }
+
+    cd apps/api || {
+        error "Failed to change directory to apps/api"
+        return 1
+    }
+
+    # Check if Prisma CLI is available
+    if ! command -v npx &> /dev/null; then
+        error "npx is not available"
+        return 1
+    fi
+
+    # Run Prisma migrations
+    if npx prisma migrate deploy; then
+        success "Database migrations completed successfully"
+        return 0
+    else
+        error "Database migrations failed"
+        return 1
+    fi
+}
+
+# ============================================================
 # PM2 Manager
 # ============================================================
 
@@ -173,6 +206,12 @@ main() {
         log "Running with root privileges"
     else
         log "Not running as root - may need sudo"
+    fi
+
+    # Run database migrations first
+    if ! migrate_database; then
+        error "Database migration failed, aborting restart"
+        exit 1
     fi
 
     # Check which method to use
