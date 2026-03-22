@@ -78,6 +78,8 @@ This directory contains CI/CD workflows for the Absenin project.
   9. Save PM2 process list
   10. Reload nginx
 
+**Note:** The `restart_service.sh` script also runs migrations before restarting the service, ensuring consistency whether deploying via CI/CD or manually.
+
 #### Health Check
 - Needs: deploy
 - Runs on ubuntu-latest
@@ -118,6 +120,30 @@ The staging deployment uses GitHub Environment Protection:
 - **URL:** `https://staging.absenin.com`
 - **Required Reviewers:** None (auto-deploy on main push)
 - **Deployment Branches:** `main` only
+
+---
+
+## Manual Restart
+
+For manual restarts on the staging VPS, use the `restart_service.sh` script:
+
+```bash
+# Copy script to staging
+scp restart_service.sh user@staging-vps:/home/user/
+
+# SSH into staging and run restart
+ssh user@staging-vps
+cd /var/www/absenin.com
+sudo ./restart_service.sh
+```
+
+**The script automatically:**
+1. Runs `npx prisma migrate deploy` (database migrations)
+2. Detects and restarts via systemd or PM2
+3. Saves PM2 process list
+4. Reloads nginx (if systemd available)
+
+**Documentation:** See `RESTART_SERVICE_GUIDE.md` for full details.
 
 ---
 
