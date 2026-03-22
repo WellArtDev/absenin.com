@@ -6,8 +6,9 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { MetaProviderAdapter, verifyMetaWebhookChallenge } from './adapters/MetaProviderAdapter';
+import { FonnteProviderAdapter } from './adapters/FonnteProviderAdapter';
 import { CommandDispatcher } from './services/CommandDispatcher';
-import { WhatsAppProvider, MetaProviderConfig } from './types';
+import { WhatsAppProvider, MetaProviderConfig, FonnteProviderConfig } from './types';
 
 const prisma = new PrismaClient();
 
@@ -127,13 +128,58 @@ async function loadIntegrationConfig(provider: WhatsAppProvider): Promise<any> {
 }
 
 /**
- * Fonnte webhook handler (skeleton for next phase)
+ * Fonnte webhook handler
  */
 export async function handleFonnteWebhook(req: Request, res: Response): Promise<void> {
-  res.status(501).json({
-    error: 'Not Implemented',
-    message: 'Fonnte adapter will be implemented in next phase'
-  });
+  try {
+    // Load Fonnte integration config
+    const integration = await loadIntegrationConfig(WhatsAppProvider.FONNTE);
+    if (!integration) {
+      console.error('Fonnte WhatsApp integration not found');
+      res.status(200).send('OK'); // Acknowledge webhook even if no config
+      return;
+    }
+
+    // Verify webhook (token-based)
+    const rawPayload = JSON.stringify(req.body);
+    const signature = req.headers['x-fonnte-signature'] as string;
+
+    const config: FonnteProviderConfig = JSON.parse(integration.api_key || '{}');
+    const adapter = new FonnteProviderAdapter(config);
+
+    // Fonnte uses token verification (less secure than signature)
+    const isValid = adapter.verifyWebhook(signature || '', rawPayload);
+
+    if (!isValid) {
+      console.warn('Fonnte webhook verification failed');
+      res.status(200).send('OK'); // Still acknowledge to avoid retries
+      return;
+    }
+
+    // Parse webhook event
+    const parsedMessage = adapter.parseWebhookEvent(req.body);
+
+    // Dispatch command
+    const dispatcher = new CommandDispatcher();
+
+    // Command requires provider in parsed message
+    const result = await dispatcher.processMessage({
+      ...parsedMessage,
+      provider: WhatsAppProvider.FONNTE
+    });
+
+    // Send response via Fonnte
+    if (result.success && result.message) {
+      await adapter.sendMessage(parsedMessage.phoneNumber, result.message);
+    }
+
+    res.status(200).json(adapter.formatWebhookResponse());
+  } catch (error: any) {
+    console.error('Fonnte webhook error:', error);
+    res.status(500).json({
+      error: 'Internal server error'
+    });
+  }
 }
 
 /**

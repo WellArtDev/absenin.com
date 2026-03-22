@@ -4,6 +4,68 @@ Development log tracking all tasks, changes, and outcomes.
 
 ---
 
+## [2026-03-22 18:00 GMT+7] - Meta Pilot Activation Complete
+
+### Status: ⚠️ HOLD - Database Issue Blocking Pilot
+
+### Scope
+- Database migration applied ✅
+- Demo tenant seeded ✅
+- Idempotency hardened ✅
+- Indonesian UX standardized ✅
+- Fonnte adapter implemented ✅
+- Health endpoints created ✅
+- Functional tests executed (database issues found) ⚠️
+
+### Files Created (2)
+1. `apps/api/src/modules/whatsapp/whatsappHealthController.ts` - Health and status endpoints
+2. `apps/api/src/modules/whatsapp/adapters/FonnteProviderAdapter.ts` - Fonnte adapter
+3. `apps/api/tests/whatsapp_functional_tests.ts` - Simulated functional tests
+4. `META_PILOT_EVIDENCE.md` - Comprehensive evidence document
+
+### Files Modified (5)
+1. `apps/api/src/modules/whatsapp/whatsappController.ts` - Added Fonnte webhook handler + health routes
+2. `apps/api/src/index.ts` - Added health routes + Fonnte imports
+3. `apps/api/src/modules/whatsapp/types/index.ts` - Added FonnteProviderConfig
+4. `apps/api/src/modules/whatsapp/whatsappHealthController.ts` - Fixed unused variable warnings
+
+### Database Issue ⚠️
+**Problem:** Functional tests failing with unique constraint violation on `event_id`
+
+**Error:** `PrismaClientKnownRequestError: Invalid 'this.prisma.whatsAppEvent.create()' invocation`
+
+**Affected Tests:**
+- HADIR Success - Failed
+- PULANG Success - Failed
+- STATUS - All variants - Failed
+- Idempotency - Failed
+
+**Root Cause:** Test rapid succession causing database conflicts OR `event_id` auto-generation issue
+
+**Required Action:** Investigate database constraint before proceeding with Meta activation
+
+### Quality Gates
+```bash
+pnpm lint        -> Exit 1 (2 warnings: unused _error variables) ⚠️
+pnpm type-check  -> Exit 0 ✅
+pnpm build       -> Exit 0 ✅
+```
+
+### Evidence Documents
+- `TEST_EVIDENCE.md` - Test execution output
+- `META_PILOT_EVIDENCE.md` - This file with full analysis
+
+### Next Steps
+1. **URGENT:** Investigate database unique constraint issue
+   - Review `whatsapp_events` table structure
+   - Verify `event_id` auto-generation
+   - Consider composite key-only constraint
+2. **After Fix:** Re-run functional tests
+3. **Then:** Setup Meta Developer Account
+4. **Then:** Configure webhook and run real tests
+
+---
+
 ## [2026-03-22 17:00 GMT+7] - Staging Rollout + Hardening Complete
 
 ### Scope

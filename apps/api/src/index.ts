@@ -21,6 +21,7 @@ import { roleRouter } from './modules/roles/roleController';
 import { locationRouter } from './modules/location/locationController';
 import { reportRouter } from './modules/report/reportController';
 import * as whatsappController from './modules/whatsapp/whatsappController';
+import * as whatsappHealthController from './modules/whatsapp/whatsappHealthController';
 
 // Create Express app
 const app = express();
@@ -110,6 +111,11 @@ app.get('/api/webhook/whatsapp/meta', whatsappController.verifyMetaWebhook);
 app.post('/api/webhook/whatsapp/meta', whatsappController.handleMetaWebhook);
 app.post('/api/webhook/whatsapp/fonnte', whatsappController.handleFonnteWebhook);
 app.post('/api/webhook/whatsapp/wablas', whatsappController.handleWablasWebhook);
+
+// WhatsApp health and status endpoints
+app.get('/api/whatsapp/health', whatsappHealthController.getWhatsAppHealth);
+app.get('/api/whatsapp/status', whatsappHealthController.getWhatsAppStatus);
+app.get('/api/whatsapp/providers', whatsappHealthController.listProviders);
 
 // Error handling middleware
 app.use(errorHandler);

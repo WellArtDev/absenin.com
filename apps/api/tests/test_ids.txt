@@ -1,0 +1,4 @@
+# Test message IDs to ensure uniqueness
+# Format: {provider}_{phone}_{timestamp}
+test_hadir_1: meta_6281234567801_${Date.now()}
+test_hadir_2: meta_6281234567801_${Date.now()}

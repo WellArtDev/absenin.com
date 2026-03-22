@@ -382,7 +382,7 @@ model WhatsAppEvent {
   integration_id   String?
   provider         String   // 'meta', 'fonnte', 'wablas'
   phone_number     String
-  message_id       String   // Provider message ID for deduplication
+  message_id       String   // Provider message ID for idempotency (scoped: tenant_id + provider + message_id)
   command          String   // 'HADIR', 'PULANG', 'STATUS', 'LEMBUR', 'SELESAI_LEMBUR'
   request_payload  Json
   response_text    String?
@@ -394,7 +394,8 @@ model WhatsAppEvent {
   // Relations
   integration      WhatsAppIntegration? @relation(fields: [integration_id], references: [integration_id], onDelete: SetNull)
 
-  @@unique([tenant_id, provider, message_id]) // Idempotency scoped to tenant + provider + message
+  // Idempotency: unique on tenant_id + provider + message_id to prevent duplicate processing
+  @@unique([tenant_id, provider, message_id])
   @@index([tenant_id, phone_number])
   @@index([tenant_id, provider])
   @@index([message_id])
