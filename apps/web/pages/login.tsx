@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
@@ -8,6 +8,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+  // Fetch CSRF token on page load
+  useEffect(() => {
+    const fetchCSRFToken = async () => {
+      try {
+        const response = await fetch('/api/auth/csrf-token', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success && data.data?.csrfToken) {
+          setCsrfToken(data.data.csrfToken);
+        }
+      } catch (err) {
+        console.error('Failed to fetch CSRF token:', err);
+      }
+    };
+
+    fetchCSRFToken();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,11 +35,18 @@ export default function LoginPage() {
     setError('');
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      // Add CSRF token to headers if available
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken;
+      }
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
@@ -101,10 +128,10 @@ export default function LoginPage() {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !csrfToken}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Signing in...' : !csrfToken ? 'Loading...' : 'Sign in'}
               </button>
             </div>
           </form>
