@@ -67,6 +67,7 @@ async function apiRequest<T = any>(
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
           },
         });
 
