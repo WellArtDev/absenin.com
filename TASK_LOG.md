@@ -4,6 +4,249 @@ Development log tracking all tasks, changes, and outcomes.
 
 ---
 
+## [2026-03-22 14:00 GMT+7] - Staging Deployment Preparation Complete
+
+### Scope
+- Prepare complete deployment package for staging on Contabo VPS
+- Create environment configuration and automation scripts
+- Set up PM2, Nginx, and SSL configurations
+- Create smoke test suite and deployment checklist
+- Verify quality gates and provide GO/NO-GO recommendation
+
+### Files Changed
+
+**Configuration:**
+1. `.env.staging.template` - CREATED - Staging environment template with all required variables
+2. `ecosystem.config.staging.js` - CREATED - PM2 configuration for API (cluster) and Web (fork)
+
+**Deployment Scripts:**
+3. `scripts/deploy-staging.sh` - CREATED - Automated deployment script with backup, build, and deploy
+4. `scripts/smoke-test.sh` - CREATED - 13-test smoke test suite for post-deployment verification
+5. `scripts/setup-ssl.sh` - CREATED - Certbot automation for Let's Encrypt SSL certificates
+6. `scripts/verify-database.sh` - CREATED - Database verification script for tables and migrations
+
+**Infrastructure:**
+7. `nginx/staging.absenin.com.conf` - CREATED - Nginx reverse proxy with SSL, rate limiting, security headers
+
+**Documentation:**
+8. `STAGING_DEPLOY_CHECKLIST.md` - CREATED - Comprehensive 100+ item checklist with rollback procedures
+9. `DEPLOYMENT_SUMMARY.md` - CREATED - Complete deployment summary with all required outputs
+
+### Quality Gates Executed
+
+```bash
+pnpm lint        -> exit 0 ✅ (API: 0 warnings, Web: 8 acceptable warnings)
+pnpm type-check  -> exit 0 ✅ (All packages compile)
+pnpm test         -> exit 0 ✅ (no-op for MVP)
+pnpm build        -> exit 0 ✅ (All packages built successfully)
+```
+
+### Deployment Package Contents
+
+**Environment:**
+- Environment template with all required variables
+- Placeholders for JWT_SECRET, CSRF_SECRET, DATABASE_URL
+- WhatsApp provider configuration (Meta/Fonnte/Wablas)
+- Upload directory and logging configuration
+
+**Runtime Configuration:**
+- PM2: Cluster mode API (2 instances, 500MB each), Fork mode Web (1 instance, 1GB)
+- Nginx: SSL redirect, TLS 1.2/1.3, rate limiting (10 req/s API, 5 req/min login)
+- Security headers: HSTS, X-Frame-Options, CSP, XSS protection
+
+**Security Features:**
+- CSRF validation: Configured and tested locally
+- Cookie security: HttpOnly, Secure (staging), SameSite
+- Rate limiting: API and login endpoints protected
+- SSL: Let's Encrypt with auto-renewal
+
+**Database:**
+- RefreshToken table: Verified (exists, 8 columns, 5 indexes, foreign key)
+- Migrations: Applied and verified
+- Verification script: Ready for staging execution
+
+### Smoke Tests (Local Reference)
+
+| Test | Result | Evidence |
+|-------|---------|----------|
+| API Health | ✅ PASS | API responding on port 3001 |
+| CSRF Token Generation | ✅ PASS | 64-char hex tokens generated |
+| Login without CSRF | ✅ PASS | 403 Forbidden with CSRF error |
+| Login with CSRF | ✅ PASS | 401 Unauthorized (CSRF passed, password failed) |
+| Database RefreshToken Table | ✅ PASS | Table exists, 0 records |
+| Tenant Scoping | ✅ PASS | Tenant validation working |
+
+### PM2 Configuration
+
+**API (`absenin-api`):**
+- Instances: 2 (cluster mode)
+- Port: 3001
+- Max Memory: 500MB
+- Restart: On crash, max 10
+- Logs: `/var/log/absenin.com/staging/pm2-api-*.log`
+
+**Web (`absenin-web`):**
+- Instances: 1 (fork mode)
+- Port: 3002
+- Max Memory: 1GB
+- Restart: On crash, max 10
+- Logs: `/var/www/absenin.com/staging/pm2-web-*.log`
+
+### Nginx Configuration
+
+**Features:**
+- HTTP to HTTPS redirect
+- Let's Encrypt SSL certificates
+- TLS 1.2/1.3 only
+- Security headers (HSTS, X-Frame-Options, CSP, etc.)
+- Gzip compression
+- Rate limiting (API: 10 req/s, Login: 5 req/min)
+- Client body size: 10MB
+- Upload directory serving
+- API/Web proxy with keep-alive
+
+### SSL Configuration
+
+**Provider:** Let's Encrypt (Certbot)
+**Features:**
+- Automated certificate obtaining
+- Standalone challenge
+- Auto-renewal with post-renewal hook
+- Nginx reload after renewal
+
+**Certificate Paths:**
+- `/etc/letsencrypt/live/staging.absenin.com/fullchain.pem`
+- `/etc/letsencrypt/live/staging.absenin.com/privkey.pem`
+
+### Deployment Checklists
+
+**STAGING_DEPLOY_CHECKLIST.md includes:**
+- Pre-deployment checklist (prerequisites, database, environment)
+- 6 deployment phases with 40+ steps
+- Post-deployment smoke tests (10 tests with evidence collection)
+- Quality gates verification
+- Rollback procedures (quick and full)
+- GO/NO-GO decision framework
+
+### Environment Variables Required
+
+**Must configure for staging:**
+```bash
+NODE_ENV=staging
+PORT=3001
+DATABASE_URL=postgresql://<user>:<pass>@localhost:5432/absenin_staging
+JWT_SECRET=<generate-32-char-secret>
+CSRF_SECRET=<generate-32-char-secret>
+CORS_ORIGINS=https://staging.absenin.com
+COOKIE_DOMAIN=.absenin.com
+WHATSAPP_PROVIDER=meta
+UPLOAD_BASE_URL=https://staging.absenin.com/uploads
+```
+
+### VPS Deployment Commands
+
+**Estimated Time:** 30 minutes
+
+```bash
+# 1. Prerequisites (5 min)
+ssh root@vps-ip
+apt update && apt upgrade -y
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt install -y nodejs postgresql nginx certbot python3-certbot-nginx
+npm install -g pnpm pm2
+
+# 2. Database (5 min)
+createdb absenin_staging
+psql -c "CREATE USER absenin_staging WITH PASSWORD 'password';"
+psql -c "GRANT ALL PRIVILEGES ON DATABASE absenin_staging TO absenin_staging;"
+
+# 3. Deploy Code (10 min)
+git clone <repo> /var/www/absenin.com/staging
+cd /var/www/absenin.com/staging
+cp .env.staging.template .env.staging
+nano .env.staging  # Fill values
+chmod +x scripts/*.sh
+./scripts/deploy-staging.sh
+
+# 4. Setup SSL (5 min)
+./scripts/setup-ssl.sh staging.absenin.com admin@absenin.com
+
+# 5. Run Smoke Tests (5 min)
+STAGING_URL=https://staging.absenin.com \
+  ./scripts/smoke-test.sh
+```
+
+### Rollback Procedures
+
+**Quick Rollback:**
+```bash
+pm2 stop all
+cd /var/backups/absenin.com/staging
+LATEST=$(ls -t | head -1)
+cp -r "$LATEST"/* /var/www/absenin.com/staging/
+pm2 start ecosystem.config.staging.js
+```
+
+**Full Rollback:**
+```bash
+pm2 stop all
+systemctl stop nginx
+psql absenin_staging < /var/backups/absenin.com/staging/db-backup.sql
+# Restore code backup
+pm2 start ecosystem.config.staging.js
+systemctl start nginx
+```
+
+### Blockers / Issues
+
+**NONE** - All blockers resolved locally.
+
+### Remaining Non-Blockers
+
+1. **Integration Tests** - Jest configuration pending (not required for staging deployment)
+2. **Cleanup Cron** - Will be scheduled during VPS deployment
+3. **Monitoring** - Will be configured post-deployment
+4. **WhatsApp Webhook** - Will be tested when provider configured
+
+### Recommendations
+
+**Immediate (Before VPS Deployment):**
+1. **Generate secrets** - Create JWT_SECRET and CSRF_SECRET with `openssl rand -base64 32`
+2. **Prepare database** - Have database credentials ready for staging
+3. **Review checklist** - Go through STAGING_DEPLOY_CHECKLIST.md before deployment
+4. **Test deployment script** - Run on test environment first if available
+
+**Short-term (Post-Deployment):**
+1. **Monitor for 24 hours** - Check PM2, Nginx, application logs
+2. **Verify cleanup cron** - Ensure token cleanup job is running
+3. **Test end-to-end** - Complete auth flow in staging environment
+4. **Set up alerts** - Configure monitoring for auth failures and errors
+
+### Next Task Proposal
+1. **Execute VPS Deployment** - Follow DEPLOYMENT_SUMMARY.md and STAGING_DEPLOY_CHECKLIST.md
+2. **Run smoke tests** - Verify all 13 tests pass in staging
+3. **Monitor and iterate** - Track metrics and fix any issues found
+
+### Overall Status
+
+**Staging Deployment Preparation: COMPLETE**
+
+**Deployment Package:**
+- ✅ All configuration files created
+- ✅ All scripts created and made executable
+- ✅ PM2 configuration ready
+- ✅ Nginx configuration ready
+- ✅ SSL setup script automated
+- ✅ Database verification script ready
+- ✅ Smoke test suite ready
+- ✅ Deployment checklist comprehensive
+- ✅ Rollback procedures documented
+- ✅ GO/NO-GO recommendation: GO
+
+**Ready for:** VPS Deployment on Contabo
+
+---
+
 ## [2026-03-22 13:00 GMT+7] - Authentication & CSRF Validation Complete
 
 ### Scope
