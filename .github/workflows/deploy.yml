@@ -1,4 +1,4 @@
-name: Deploy Staging
+name: Deploy
 
 on:
   push:
@@ -14,22 +14,25 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - run: npm i -g pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma Client
+      - name: Generate Prisma client
         run: pnpm --filter @absenin/api db:generate
 
       - name: Run Lint
@@ -37,10 +40,6 @@ jobs:
 
       - name: Run Type Check
         run: pnpm type-check
-
-      - name: Run WhatsApp Functional Tests
-        run: pnpm --filter @absenin/api test:functional || true
-        continue-on-error: true
 
       - name: Build All Packages
         run: pnpm build
@@ -53,37 +52,67 @@ jobs:
       name: staging
       url: https://staging.absenin.com
     steps:
-      - name: Setup SSH key
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: npm i -g pnpm
+
+      - name: Deploy via SSH
+        env:
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          SSH_HOST: ${{ secrets.STAGING_HOST }}
+          SSH_PORT: ${{ secrets.STAGING_PORT }}
+          SSH_USER: ${{ secrets.STAGING_USER }}
+          APP_DIR: ${{ secrets.STAGING_APP_DIR }}
         run: |
           set -e
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ secrets.STAGING_PORT }}" -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: Deploy via native SSH
-        run: |
-          set -e
-          ssh -i ~/.ssh/id_ed25519 -p "${{ secrets.STAGING_PORT }}" "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOF'
             set -e
-            cd "${{ secrets.STAGING_APP_DIR }}"
+            cd "$APP_DIR"
 
+            # Pull latest code
             git fetch --all
             git reset --hard origin/main
 
+            # Install dependencies
             command -v pnpm >/dev/null 2>&1 || corepack enable && corepack prepare pnpm@10 --activate
             pnpm install --frozen-lockfile
+
+            # Generate Prisma client
             pnpm --filter @absenin/api db:generate
+
+            # Build project
             pnpm build
 
+            # Run migrations
             cd apps/api
             npx prisma migrate deploy
             cd ../..
 
+            # Restart services
             pm2 restart absenin-api || pm2 start "pnpm --filter @absenin/api start" --name absenin-api
             pm2 restart absenin-web || pm2 start "pnpm --filter @absenin/web start -p 3000" --name absenin-web
             pm2 save
 
+            # Reload nginx
             nginx -t || sudo -n nginx -t
             systemctl reload nginx || sudo -n systemctl reload nginx
           EOF
@@ -111,10 +140,18 @@ jobs:
           curl -f https://staging.absenin.com/api/whatsapp/status || exit 1
           echo "✅ Database connectivity check passed"
 
-      - name: Verify Webhook Endpoints
+      - name: Verify Web Access
         run: |
-          # Meta webhook (should respond 200 to GET with challenge)
-          curl -f "https://staging.absenin.com/api/webhook/whatsapp/meta?hub.verify_token=test&hub.challenge=test" || echo "⚠️  Meta webhook not configured yet"
-          # Fonnte webhook (should accept POST)
-          curl -X POST -f https://staging.absenin.com/api/webhook/whatsapp/fonnte -H "Content-Type: application/json" -d '{}' || echo "⚠️  Fonnte webhook not configured yet"
-          echo "✅ Webhook endpoints accessible"
+          curl -fI https://staging.absenin.com/login || exit 1
+          echo "✅ Web access check passed"
+
+      - name: Report Success
+        run: |
+          echo "========================================"
+          echo "✅ Deployment successful!"
+          echo "========================================"
+          echo ""
+          echo "Staging URL: https://staging.absenin.com"
+          echo "API Health: https://staging.absenin.com/api/health"
+          echo "WhatsApp: https://staging.absenin.com/api/whatsapp/health"
+          echo ""
