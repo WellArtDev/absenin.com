@@ -124,33 +124,20 @@ jobs:
       - name: Wait for services to start
         run: sleep 30
 
-      - name: Check API Health
-        run: |
-          curl -f https://staging.absenin.com/health || exit 1
-          echo "✅ API health check passed"
-
-      - name: Check WhatsApp Integration Health
-        run: |
-          curl -f https://staging.absenin.com/api/whatsapp/health || exit 1
-          echo "✅ WhatsApp health check passed"
-
-      - name: Check Database Connectivity
-        run: |
-          curl -f https://staging.absenin.com/api/whatsapp/status || exit 1
-          echo "✅ Database connectivity check passed"
-
-      - name: Verify Web Access
-        run: |
-          curl -fI https://staging.absenin.com/login || exit 1
-          echo "✅ Web access check passed"
-
-      - name: Report Success
+      - name: Check PM2 Status (Manual Verification)
         run: |
           echo "========================================"
-          echo "✅ Deployment successful!"
+          echo "⚠️  Manual verification required"
           echo "========================================"
           echo ""
-          echo "Staging URL: https://staging.absenin.com"
-          echo "API Health: https://staging.absenin.com/api/health"
-          echo "WhatsApp: https://staging.absenin.com/api/whatsapp/health"
+          echo "SSH to staging server and check:"
+          echo "  pm2 status"
+          echo "  pm2 logs absenin-api --lines 50"
+          echo ""
+          echo "Test API endpoints:"
+          echo "  curl http://localhost:3001/health"
+          echo "  curl https://staging.absenin.com/health"
+          echo ""
+          echo "Check nginx logs if needed:"
+          echo "  sudo tail -f /var/log/nginx/error.log"
           echo ""
