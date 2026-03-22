@@ -93,6 +93,9 @@ jobs:
 
             # Install dependencies
             command -v pnpm >/dev/null 2>&1 || corepack enable && corepack prepare pnpm@10 --activate
+
+            # Set CI environment variable for pnpm
+            export CI=true
             pnpm install --frozen-lockfile
 
             # Generate Prisma client
