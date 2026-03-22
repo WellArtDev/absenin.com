@@ -49,6 +49,7 @@ jobs:
 
             command -v pnpm >/dev/null 2>&1 || corepack enable && corepack prepare pnpm@10 --activate
             pnpm install --frozen-lockfile
+            pnpm --filter @absenin/api db:generate
             pnpm build
 
             cd apps/api
