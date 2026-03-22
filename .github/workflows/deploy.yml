@@ -76,7 +76,6 @@ jobs:
           SSH_HOST: ${{ secrets.STAGING_HOST }}
           SSH_PORT: ${{ secrets.STAGING_PORT }}
           SSH_USER: ${{ secrets.STAGING_USER }}
-          APP_DIR: ${{ secrets.STAGING_APP_DIR || '/var/www/absenin' }}
         run: |
           set -e
           mkdir -p ~/.ssh
@@ -86,7 +85,7 @@ jobs:
 
           ssh -i ~/.ssh/id_ed25519 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOF'
             set -e
-            cd "$APP_DIR"
+            cd /var/www/absenin
 
             # Pull latest code
             git fetch --all
