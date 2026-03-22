@@ -1,0 +1,349 @@
+// This is your Prisma schema file for MVP,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Platform Level Tables
+// ============================================
+
+model Tenant {
+  tenant_id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  name             String
+  slug             String   @unique
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  users            User[]
+  employees        Employee[]
+  divisions        Division[]
+  positions        Position[]
+  roles            Role[]
+  company_settings CompanySettings?
+  office_locations OfficeLocation[]
+  attendance_records AttendanceRecord[]
+  subscriptions    TenantSubscription[]
+
+  @@index([slug])
+  @@index([created_at])
+  @@map("tenants")
+}
+
+model SubscriptionPlan {
+  plan_id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  name             String
+  slug             String   @unique
+  description      String?
+  monthly_price    Decimal
+  yearly_price     Decimal
+  features         Json     @default("{}")
+  limits           Json     @default("{}")
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  subscriptions    TenantSubscription[]
+
+  @@index([slug])
+  @@index([is_active])
+  @@map("subscription_plans")
+}
+
+model TenantSubscription {
+  subscription_id  String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  plan_id          String
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  plan             SubscriptionPlan @relation(fields: [plan_id], references: [plan_id])
+  status           String   @default("active") // active/suspended/cancelled/expired
+  started_at       DateTime
+  ended_at         DateTime?
+  created_at       DateTime @default(now())
+
+  @@index([tenant_id])
+  @@index([plan_id])
+  @@index([status])
+  @@index([tenant_id, status])
+  @@map("tenant_subscriptions")
+}
+
+// ============================================
+// Tenant Identity & Access Management
+// ============================================
+
+model User {
+  user_id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  employee_id      String?  @unique
+  email            String
+  password_hash    String
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  employee         Employee? @relation(fields: [employee_id], references: [employee_id], onDelete: SetNull)
+  user_roles       UserRole[]
+  refresh_tokens   RefreshToken[]
+
+  @@unique([tenant_id, email])
+  @@index([tenant_id])
+  @@index([tenant_id, is_active])
+  @@map("users")
+}
+
+model RefreshToken {
+  token_id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  user_id          String
+  token_hash       String   @unique
+  user_agent       String?
+  ip_address       String?
+  expires_at       DateTime
+  revoked_at       DateTime?
+  created_at       DateTime @default(now())
+
+  // Relations
+  user             User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token_hash])
+  @@index([expires_at])
+  @@index([revoked_at])
+  @@map("refresh_tokens")
+}
+
+model Employee {
+  employee_id      String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  nip              String
+  full_name        String
+  email            String?
+  phone            String?
+  division_id      String?
+  position_id      String?
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  division         Division? @relation(fields: [division_id], references: [division_id], onDelete: SetNull)
+  position         Position? @relation(fields: [position_id], references: [position_id], onDelete: SetNull)
+  user             User?
+  attendance_records AttendanceRecord[]
+
+  @@unique([tenant_id, nip])
+  @@unique([tenant_id, email])
+  @@index([tenant_id])
+  @@index([division_id])
+  @@index([position_id])
+  @@index([tenant_id, is_active])
+  @@map("employees")
+}
+
+model Division {
+  division_id      String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  name             String
+  parent_division_id String?
+  created_at       DateTime @default(now())
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  parent_division  Division? @relation("DivisionHierarchy", fields: [parent_division_id], references: [division_id], onDelete: SetNull)
+  child_divisions  Division[] @relation("DivisionHierarchy")
+  positions        Position[]
+  employees        Employee[]
+
+  @@index([tenant_id])
+  @@index([parent_division_id])
+  @@map("divisions")
+}
+
+model Position {
+  position_id      String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  division_id      String
+  name             String
+  created_at       DateTime @default(now())
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  division         Division @relation(fields: [division_id], references: [division_id], onDelete: Cascade)
+  employees        Employee[]
+
+  @@index([tenant_id])
+  @@index([division_id])
+  @@index([tenant_id, division_id])
+  @@map("positions")
+}
+
+// ============================================
+// Permission System
+// ============================================
+
+model Permission {
+  permission_id    String   @id @default(dbgenerated("gen_random_uuid()"))
+  code             String   @unique
+  description      String   @db.VarChar(255)
+  created_at       DateTime @default(now())
+
+  // Relations
+  role_permissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  role_id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  name             String
+  description      String?
+  is_system        Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  role_permissions RolePermission[]
+  user_roles       UserRole[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id])
+  @@map("roles")
+}
+
+model RolePermission {
+  role_id          String
+  permission_id    String
+  assigned_at      DateTime @default(now())
+
+  // Relations
+  role             Role     @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+  permission       Permission @relation(fields: [permission_id], references: [permission_id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  user_id          String
+  role_id          String
+  assigned_at      DateTime @default(now())
+
+  // Relations
+  user             User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  role             Role     @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+
+  @@id([user_id, role_id])
+  @@map("user_roles")
+}
+
+// ============================================
+// Tenant Configuration
+// ============================================
+
+model CompanySettings {
+  setting_id       String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String   @unique
+  timezone         String   @default("Asia/Jakarta")
+  work_start_time  String   @default("09:00:00")
+  work_end_time    String   @default("17:00:00")
+  late_tolerance_minutes Int  @default(15)
+  default_geofence_radius_meters Int @default(100)
+  whatsapp_provider String   @default("meta") // meta/wablas/fonnte
+  whatsapp_config  Json     @default("{}")
+  selfie_verification_enabled Boolean @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+
+  @@map("company_settings")
+}
+
+model OfficeLocation {
+  location_id      String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  name             String
+  latitude         Decimal  @db.Decimal(10, 8)
+  longitude        Decimal  @db.Decimal(11, 8)
+  radius_meters    Int
+  is_main          Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  attendance_records AttendanceRecord[]
+
+  @@index([tenant_id])
+  @@index([tenant_id, is_main])
+  @@index([latitude, longitude])
+  @@map("office_locations")
+}
+
+// ============================================
+// Attendance & Verification
+// ============================================
+
+model AttendanceRecord {
+  record_id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id        String
+  employee_id      String
+  checkin_time     DateTime
+  checkout_time    DateTime?
+  checkin_lat      Decimal? @db.Decimal(10, 8)
+  checkin_lon      Decimal? @db.Decimal(11, 8)
+  checkin_accuracy Float?
+  checkout_lat     Decimal? @db.Decimal(10, 8)
+  checkout_lon     Decimal? @db.Decimal(11, 8)
+  checkout_accuracy Float?
+  verification_type String  // 'manual', 'gps', 'selfie', 'admin'
+  status           String   @default("pending") // 'pending', 'approved', 'rejected'
+  notes            String?
+  office_location_id String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  tenant           Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  employee         Employee @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
+  office_location  OfficeLocation? @relation(fields: [office_location_id], references: [location_id], onDelete: SetNull)
+  selfie_uploads   SelfieUpload[]
+
+  @@index([tenant_id])
+  @@index([employee_id])
+  @@index([tenant_id, checkin_time])
+  @@index([tenant_id, employee_id, checkin_time])
+  @@index([checkin_lat, checkin_lon])
+  @@index([office_location_id])
+  @@index([verification_type])
+  @@index([status])
+  @@map("attendance_records")
+}
+
+model SelfieUpload {
+  upload_id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  attendance_record_id String
+  image_url        String
+  upload_type      String   @default("checkin") // 'checkin' or 'checkout'
+  status           String   @default("pending") // 'pending', 'approved', 'rejected'
+  uploaded_at      DateTime @default(now())
+
+  // Relations
+  attendance_record AttendanceRecord @relation(fields: [attendance_record_id], references: [record_id], onDelete: Cascade)
+
+  @@index([attendance_record_id])
+  @@index([attendance_record_id, upload_type])
+  @@map("selfie_uploads")
+}

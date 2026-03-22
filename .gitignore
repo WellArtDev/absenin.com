@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+.turbo/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Runtime / process
+*.pid
+*.seed
+*.pid.lock
+
+# Uploads / generated media
+uploads/
+public/uploads/
+
+# Prisma / local DB artifacts
+*.db
+*.db-journal
+
+# Test artifacts
+junit.xml
+.nyc_output/
+
+# PM2
+.pm2/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

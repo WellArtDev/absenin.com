@@ -1,0 +1,44 @@
+{
+  "name": "@absenin/web",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "echo 'No tests configured for web package'",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@absenin/types": "workspace:*",
+    "@hookform/resolvers": "^3.0.0",
+    "autoprefixer": "^10.4.0",
+    "axios": "^1.6.0",
+    "clsx": "^2.0.0",
+    "date-fns": "^2.30.0",
+    "i18next": "^22.0.0",
+    "i18next-browser-languagedetector": "^7.0.0",
+    "i18next-http-backend": "^3.0.0",
+    "leaflet": "^1.9.0",
+    "next": "^14.0.0",
+    "postcss": "^8.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.0",
+    "react-i18next": "^12.0.0",
+    "react-leaflet": "^5.0.0",
+    "react-query": "^3.39.0",
+    "tailwindcss": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0"
+  }
+}
