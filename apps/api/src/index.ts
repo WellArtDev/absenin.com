@@ -26,6 +26,9 @@ import * as whatsappHealthController from './modules/whatsapp/whatsappHealthCont
 // Create Express app
 const app = express();
 
+// Trust proxy - important for nginx reverse proxy
+app.set('trust proxy', true);
+
 // Initialize Prisma client
 const prisma = new PrismaClient();
 
