@@ -33,16 +33,20 @@ jobs:
     needs: quality-gate
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          port: ${{ secrets.STAGING_PORT }}
-          script: |
+      - name: Setup SSH key
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.STAGING_PORT }}" -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via native SSH
+        run: |
+          set -e
+          ssh -i ~/.ssh/id_ed25519 -p "${{ secrets.STAGING_PORT }}" "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" << 'EOF'
             set -e
-            cd ${{ secrets.STAGING_APP_DIR }}
+            cd "${{ secrets.STAGING_APP_DIR }}"
 
             git fetch --all
             git reset --hard origin/main
@@ -62,3 +66,4 @@ jobs:
 
             nginx -t || sudo -n nginx -t
             systemctl reload nginx || sudo -n systemctl reload nginx
+          EOF
