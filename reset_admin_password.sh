@@ -77,7 +77,7 @@ VALUES (
   NOW(),
   NOW()
 )
-ON CONFLICT (email) DO UPDATE SET
+ON CONFLICT (tenant_id, email) DO UPDATE SET
   password_hash = '\$2b\$12\$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhNj/L4sCFA/8E6iPv9zTw',
   updated_at = NOW(),
   is_active = true;
@@ -132,7 +132,8 @@ npx prisma db execute --stdin <<SQL
 UPDATE users
 SET password_hash = '$PASSWORD_HASH',
     updated_at = NOW()
-WHERE email = '$ADMIN_EMAIL';
+WHERE tenant_id = 'demo-tenant-001'
+  AND email = '$ADMIN_EMAIL';
 SQL
 
 success "Password updated"
@@ -152,10 +153,12 @@ npx prisma db execute --stdin <<'SQL'
 SELECT
     'Admin User:' as info,
     email,
+    tenant_id,
     CASE WHEN is_active THEN 'Active' ELSE 'Inactive' END as status,
     LENGTH(password_hash) as hash_length
 FROM users
-WHERE email = '$ADMIN_EMAIL';
+WHERE tenant_id = 'demo-tenant-001'
+  AND email = '$ADMIN_EMAIL';
 SQL
 
 # ============================================================
