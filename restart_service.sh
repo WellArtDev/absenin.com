@@ -12,6 +12,7 @@ set -e errexit pipefail
 
 # Configuration
 ENV="${1:-production}"
+APP_DIR="/var/www/absenin"
 APP_NAME="absenin-api"
 SERVICE_NAME="absenin-api"
 PM2_APP_NAME="absenin-api"
@@ -65,8 +66,8 @@ success() {
 migrate_database() {
     log "Running database migrations..."
 
-    cd /var/www/$SERVICE_NAME || {
-        error "Failed to change directory to /var/www/$SERVICE_NAME"
+    cd $APP_DIR || {
+        error "Failed to change directory to $APP_DIR"
         return 1
     }
 
@@ -117,8 +118,8 @@ start_pm2() {
     log "Executing: pm2 $PM2_PROCESS..."
 
     # Using pm2 CLI instead of API for better process control
-    cd /var/www/$SERVICE_NAME || {
-        error "Failed to change directory to /var/www/$SERVICE_NAME"
+    cd $APP_DIR || {
+        error "Failed to change directory to $APP_DIR"
         return 1
     }
 

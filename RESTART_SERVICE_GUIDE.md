@@ -228,7 +228,7 @@ pm2 list
 curl -I http://localhost:3000/api/health
 
 # Start server if needed
-cd /var/www/absenin.com
+cd /var/www/absenin
 pm2 start absenin-api
 ```
 
@@ -246,7 +246,7 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Check database connection
-cd /var/www/absenin.com/apps/api
+cd /var/www/absenin/apps/api
 npx prisma db pull
 
 # Manually run migrations
@@ -260,7 +260,7 @@ npx prisma migrate deploy
 **Solution:**
 ```bash
 # Check migration status
-cd /var/www/absenin.com/apps/api
+cd /var/www/absenin/apps/api
 npx prisma migrate status
 
 # Review migration logs
@@ -343,7 +343,7 @@ sudo systemctl restart absenin-api
 3. **Run on Staging**
    ```bash
    ssh user@staging-vps
-   cd /var/www/absenin.com
+   cd /var/www/absenin
    sudo ./restart_service.sh
    ```
 

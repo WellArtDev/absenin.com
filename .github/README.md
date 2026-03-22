@@ -102,7 +102,7 @@ This directory contains CI/CD workflows for the Absenin project.
 | `STAGING_HOST` | Staging VPS hostname/IP | `staging.absenin.com` or `192.168.1.100` |
 | `STAGING_PORT` | SSH port for staging VPS | `22` (default) |
 | `STAGING_USER` | SSH user for staging VPS | `deploy` or `ubuntu` |
-| `STAGING_APP_DIR` | Application directory on staging VPS | `/var/www/absenin.com` |
+| `STAGING_APP_DIR` | Application directory on staging VPS | `/var/www/absenin` |
 
 ### Adding Secrets
 
@@ -133,7 +133,7 @@ scp restart_service.sh user@staging-vps:/home/user/
 
 # SSH into staging and run restart
 ssh user@staging-vps
-cd /var/www/absenin.com
+cd /var/www/absenin
 sudo ./restart_service.sh
 ```
 
