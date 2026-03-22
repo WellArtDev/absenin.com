@@ -69,18 +69,20 @@ info "Connecting to staging server and dumping database..."
 
 ssh $STAGING_HOST << 'ENDSSH'
     set -e
+
+    # Get database password from environment
     cd /var/www/absenin/apps/api
+    source .env 2>/dev/null || true
 
     # Dump database to file
-    PGPASSWORD="$STAGING_DB_USER" pg_dump -h $STAGING_DB_HOST -p $STAGING_DB_PORT -U $STAGING_DB_USER \
-        -d $STAGING_DB_NAME \
+    pg_dump -h localhost -U absenin -d absenin_staging \
         --clean \
         --no-owner \
         --no-acl \
         --format=plain \
         -f /tmp/absenin_staging_dump.sql
 
-    echo "✅ Database dumped to /tmp/absenin_staging_dump.sql"
+    echo "Database dumped to /tmp/absenin_staging_dump.sql"
 ENDSSH
 
 success "Staging database dumped"
