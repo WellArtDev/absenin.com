@@ -181,6 +181,55 @@ All 7 standard templates implemented
 
 ---
 
-**Report Version:** 1.0
-**Last Updated:** 2026-03-22 19:00 GMT+7
-**Status:** ✅ GO for Fonnte Pilot Traffic
+## 9. Service Restart - Production-Ready ✅
+
+### Restart Script Created
+
+**File:** `restart_service.sh`
+**Location:** `/home/wethepeople/.openclaw/workspace/absenin.com/restart_service.sh`
+
+**Features:**
+- ✅ PM2 process management (start/restart/stop)
+- ✅ Systemd integration (auto-detected and used when available)
+- ✅ Color-coded logging (GREEN/YELLOW/RED/NC)
+- ✅ Environment detection (production/development)
+- ✅ Root privilege check
+- ✅ Comprehensive error handling with exit codes
+- ✅ Security (requires sudo for systemd operations)
+
+### Usage
+
+**Upload to Staging VPS:**
+```bash
+scp restart_service.sh user@staging-vps:/home/user/
+ssh user@staging-vps "cd /var/www/absenin.com && sudo ./restart_service.sh"
+```
+
+**Make Executable:**
+```bash
+chmod +x restart_service.sh
+```
+
+**Run on Staging:**
+```bash
+./restart_service.sh
+```
+
+**Check Service Status:**
+```bash
+pm2 status absenin-api
+```
+
+**View Logs:**
+```bash
+tail -f /var/log/absenin-api/pm2-out.log
+```
+
+---
+
+**Deployment Command:**
+```bash
+# Upload script to staging, then:
+scp restart_service.sh user@staging-vps:/home/user/
+ssh user@staging-vps "cd /var/www/absenin.com && sudo ./restart_service.sh"
+```

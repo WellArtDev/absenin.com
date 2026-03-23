@@ -20,6 +20,9 @@ import { attendanceRouter } from './modules/attendance/attendanceController';
 import { roleRouter } from './modules/roles/roleController';
 import { locationRouter } from './modules/location/locationController';
 import { reportRouter } from './modules/report/reportController';
+import { divisionRouter } from './modules/division/divisionController';
+import { positionRouter } from './modules/position/positionController';
+import { companySettingsRouter } from './modules/settings/companySettingsController';
 import * as whatsappController from './modules/whatsapp/whatsappController';
 import * as whatsappHealthController from './modules/whatsapp/whatsappHealthController';
 
@@ -68,6 +71,8 @@ app.use('/api/employees/*', tenantMiddleware);
 app.use('/api/roles/*', tenantMiddleware);
 app.use('/api/locations/*', tenantMiddleware);
 app.use('/api/settings/*', tenantMiddleware);
+app.use('/api/divisions/*', tenantMiddleware);
+app.use('/api/positions/*', tenantMiddleware);
 
 // Auth middleware for protected endpoints
 app.use('/api/tenant/*', authMiddleware);
@@ -75,6 +80,9 @@ app.use('/api/employees/*', authMiddleware);
 app.use('/api/attendance/*', authMiddleware);
 app.use('/api/roles/*', authMiddleware);
 app.use('/api/locations/*', authMiddleware);
+app.use('/api/divisions/*', authMiddleware);
+app.use('/api/positions/*', authMiddleware);
+app.use('/api/settings/*', authMiddleware);
 
 // Permission middleware for feature-based access
 app.use('/api/attendance/*', permissionMiddleware('attendance'));
@@ -89,6 +97,7 @@ app.use('/api/employees', csrfValidationMiddleware);
 app.use('/api/attendance', csrfValidationMiddleware);
 app.use('/api/roles', csrfValidationMiddleware);
 app.use('/api/locations', csrfValidationMiddleware);
+app.use('/api/settings', csrfValidationMiddleware);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -107,6 +116,9 @@ app.use('/api/employees', employeeRouter);
 app.use('/api/attendance', attendanceRouter);
 app.use('/api/roles', roleRouter);
 app.use('/api/locations', locationRouter);
+app.use('/api/divisions', divisionRouter);
+app.use('/api/positions', positionRouter);
+app.use('/api/settings', companySettingsRouter);
 app.use('/api/reports', reportRouter);
 
 // WhatsApp webhook routes (no auth/CSRF required)

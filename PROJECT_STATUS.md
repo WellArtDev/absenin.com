@@ -215,3 +215,32 @@ Implement WhatsApp-based attendance and overtime (lembur) commands with multi-pr
 - `PROJECT_STATUS.md` = latest canonical status.
 - `TASK_LOG.md` = chronological details.
 - If a newer task entry supersedes old status, this file must be updated in the same change.
+
+## [2026-03-22 21:00 GMT+7] - Restart Service Script Complete
+
+### Status: ✅ Production-Ready for Staging
+
+### Files Created (2)
+- `restart_service.sh` - Executable restart script
+- `RESTART_SERVICE_GUIDE.md` - VPS restart guide
+
+### Script Capabilities
+- PM2 process management (auto-start/restart/stop)
+- Systemd integration (preferred)
+- Color-coded logging
+- Environment detection (production/development)
+- Error handling with exit codes
+
+### Usage
+```scp restart_service.sh user@staging-vps:/home/user/```ssh user@staging-vps "cd /var/www/absenin.com && sudo ./restart_service.sh"``
+
+### Security Features
+- Requires sudo for systemd operations
+- Production mode: HTTPS + secure cookies
+- CSRF token: 7-day expiration
+- Access control: only root can run script
+
+### Documentation Updates
+- RESTART_SERVICE_GUIDE.md - Comprehensive guide created
+- TASK_LOG.md - Restart script logged
+

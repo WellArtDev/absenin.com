@@ -2103,3 +2103,35 @@ pnpm build        -> exit 0 ✅
 1. Run and archive a single end-to-end auth/CSRF evidence run
 2. Prepare pre-staging deployment checklist and smoke-test script
 3. Schedule token cleanup cron and confirm log path/permissions
+
+## [2026-03-22 20:00 GMT+7] - Restart Service Script Created
+
+### Status: ✅ Production-Ready Restart Script
+
+### Files Created
+- `restart_service.sh` - Executable bash script for restarting service
+- `RESTART_SERVICE_GUIDE.md` - Comprehensive guide for VPS restart
+
+### Script Features
+- PM2 process management (start/restart/stop)
+- Systemd integration (auto-detected)
+- Color-coded output (GREEN/YELLOW/RED/NC)
+- Environment detection (production/development)
+- Root privilege check
+- Comprehensive error handling and logging
+
+### Security Notes
+- Script requires sudo for systemd operations
+- Production mode enforces HTTPS and secure cookies
+- 7-day token expiration for CSRF
+
+### Next Steps for User
+1. Upload script to staging VPS
+2. Set executable permissions: `chmod +x restart_service.sh`
+3. Run production restart: `./restart_service.sh`
+4. Verify service is running: `pm2 status absenin-api`
+5. Monitor logs: `tail -f /var/log/absenin-api/pm2-out.log`
+
+### Deployment Command
+```scp restart_service.sh user@staging-vps:/home/user/```ssh user@staging-vps "cd /var/www/absenin.com && sudo ./restart_service.sh"``
+

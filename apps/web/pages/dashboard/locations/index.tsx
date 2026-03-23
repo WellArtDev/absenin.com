@@ -63,6 +63,15 @@ export default function LocationsPage() {
 
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof LocationRequest, string>>>({});
 
+  // Geocoding state
+  const [searchingLocation, setSearchingLocation] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<Array<{
+    display_name: string;
+    lat: string;
+    lon: string;
+  }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const handleTestLocation = () => {
     if (!navigator.geolocation) {
       setToast({
@@ -138,6 +147,55 @@ export default function LocationsPage() {
         maximumAge: 0
       }
     );
+  };
+
+  const handleSearchLocation = async (query: string) => {
+    if (!query || query.length < 3) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      setSearchingLocation(true);
+
+      // Using OpenStreetMap Nominatim API (free, no API key required)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=id`,
+        {
+          headers: {
+            'Accept-Language': 'id-ID,en-US'
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        setLocationSuggestions(data);
+        setShowSuggestions(true);
+      } else {
+        setLocationSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (err) {
+      console.error('Error searching location:', err);
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+    } finally {
+      setSearchingLocation(false);
+    }
+  };
+
+  const handleSelectLocation = (suggestion: { display_name: string; lat: string; lon: string }) => {
+    setFormData({
+      ...formData,
+      name: formData.name || suggestion.display_name.split(',')[0],
+      latitude: parseFloat(suggestion.lat),
+      longitude: parseFloat(suggestion.lon)
+    });
+    setShowSuggestions(false);
+    setLocationSuggestions([]);
   };
 
   const fetchLocations = async () => {
@@ -626,66 +684,170 @@ export default function LocationsPage() {
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                           Nama Lokasi <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          id="name"
-                          value={formData.name || ''}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
+                        <div className="mt-1 relative">
+                          <input
+                            type="text"
+                            id="name"
+                            value={formData.name || ''}
+                            onChange={(e) => {
+                              setFormData({ ...formData, name: e.target.value });
+                              handleSearchLocation(e.target.value);
+                            }}
+                            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            placeholder="Cari nama lokasi (mis: Monas, Grand Indonesia, etc.)"
+                            autoComplete="off"
+                          />
+                          {searchingLocation && (
+                            <div className="absolute right-3 top-2.5">
+                              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
                         {formErrors.name && (
                           <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
                         )}
+
+                        {/* Location Suggestions */}
+                        {showSuggestions && locationSuggestions.length > 0 && (
+                          <div className="mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto z-10">
+                            {locationSuggestions.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => handleSelectLocation(suggestion)}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-medium text-gray-900">
+                                  {suggestion.display_name.split(',')[0]}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {suggestion.display_name}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Latitude */}
-                      <div>
-                        <label htmlFor="latitude" className="block text-sm font-medium text-gray-700">
-                          Latitude <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          step="any"
-                          id="latitude"
-                          value={formData.latitude ?? ''}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setFormData({
-                              ...formData,
-                              latitude: value === '' ? undefined : parseFloat(value)
-                            });
-                          }}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        {formErrors.latitude && (
-                          <p className="mt-1 text-sm text-red-600">{formErrors.latitude}</p>
-                        )}
-                        <p className="mt-1 text-xs text-gray-500">Rentang: -90 sampai 90</p>
+                      {/* Latitude & Longitude with Geolocation */}
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {/* Latitude */}
+                        <div>
+                          <label htmlFor="latitude" className="block text-sm font-medium text-gray-700">
+                            Latitude <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="any"
+                            id="latitude"
+                            value={formData.latitude ?? ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setFormData({
+                                ...formData,
+                                latitude: value === '' ? undefined : parseFloat(value)
+                              });
+                            }}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          />
+                          {formErrors.latitude && (
+                            <p className="mt-1 text-sm text-red-600">{formErrors.latitude}</p>
+                          )}
+                          <p className="mt-1 text-xs text-gray-500">Rentang: -90 sampai 90</p>
+                        </div>
+
+                        {/* Longitude */}
+                        <div>
+                          <label htmlFor="longitude" className="block text-sm font-medium text-gray-700">
+                            Longitude <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="any"
+                            id="longitude"
+                            value={formData.longitude ?? ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setFormData({
+                                ...formData,
+                                longitude: value === '' ? undefined : parseFloat(value)
+                              });
+                            }}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          />
+                          {formErrors.longitude && (
+                            <p className="mt-1 text-sm text-red-600">{formErrors.longitude}</p>
+                          )}
+                          <p className="mt-1 text-xs text-gray-500">Rentang: -180 sampai 180</p>
+                        </div>
                       </div>
 
-                      {/* Longitude */}
+                      {/* Use Current Location Button */}
                       <div>
-                        <label htmlFor="longitude" className="block text-sm font-medium text-gray-700">
-                          Longitude <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          step="any"
-                          id="longitude"
-                          value={formData.longitude ?? ''}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setFormData({
-                              ...formData,
-                              longitude: value === '' ? undefined : parseFloat(value)
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!navigator.geolocation) {
+                              setToast({
+                                message: 'Browser Anda tidak mendukung geolocation',
+                                type: 'error'
+                              });
+                              return;
+                            }
+
+                            setToast({
+                              message: 'Mendeteksi lokasi Anda...',
+                              type: 'success'
                             });
+
+                            navigator.geolocation.getCurrentPosition(
+                              (position) => {
+                                setFormData({
+                                  ...formData,
+                                  latitude: position.coords.latitude,
+                                  longitude: position.coords.longitude
+                                });
+                                setToast({
+                                  message: 'Lokasi berhasil dideteksi!',
+                                  type: 'success'
+                                });
+                              },
+                              (error) => {
+                                let message = 'Gagal mendapatkan lokasi Anda';
+                                switch (error.code) {
+                                  case error.PERMISSION_DENIED:
+                                    message = 'Izin lokasi ditolak. Silakan aktifkan lokasi di browser Anda.';
+                                    break;
+                                  case error.POSITION_UNAVAILABLE:
+                                    message = 'Informasi lokasi tidak tersedia.';
+                                    break;
+                                  case error.TIMEOUT:
+                                    message = 'Waktu habis untuk mendapatkan lokasi.';
+                                    break;
+                                }
+                                setToast({
+                                  message,
+                                  type: 'error'
+                                });
+                              },
+                              {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 0
+                              }
+                            );
                           }}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                        {formErrors.longitude && (
-                          <p className="mt-1 text-sm text-red-600">{formErrors.longitude}</p>
-                        )}
-                        <p className="mt-1 text-xs text-gray-500">Rentang: -180 sampai 180</p>
+                          className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          Gunakan Lokasi Saya Saat Ini
+                        </button>
+                        <p className="mt-1 text-xs text-gray-500 text-center">
+                          Atau cari nama lokasi di atas untuk auto-fill koordinat
+                        </p>
                       </div>
 
                       {/* Radius */}
