@@ -91,10 +91,13 @@ jobs:
             git fetch --all
             git reset --hard origin/main
 
-            # Fix node_modules permissions
-            sudo chown -R $USER:$(id -gn) node_modules 2>/dev/null || true
-            sudo chown -R $USER:$(id -gn) .pnpm 2>/dev/null || true
-            sudo chmod -R u+w node_modules 2>/dev/null || true
+            # Remove node_modules to avoid permission issues
+            echo "Removing node_modules..."
+            sudo rm -rf node_modules
+            sudo rm -rf .pnpm
+            sudo rm -rf apps/web/.next
+            sudo rm -rf apps/web/out
+            sudo rm -rf apps/api/dist
 
             # Install dependencies as regular user (not sudo)
             command -v pnpm >/dev/null 2>&1 || corepack enable && corepack prepare pnpm@10 --activate
