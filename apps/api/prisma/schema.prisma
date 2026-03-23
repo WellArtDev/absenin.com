@@ -32,6 +32,7 @@ model Tenant {
   attendance_records AttendanceRecord[]
   subscriptions    TenantSubscription[]
   whatsapp_integrations WhatsAppIntegration[]
+  overtime_records  OvertimeRecord[]
 
   @@index([slug])
   @@index([created_at])
@@ -143,6 +144,7 @@ model Employee {
   position         Position? @relation(fields: [position_id], references: [position_id], onDelete: SetNull)
   user             User?
   attendance_records AttendanceRecord[]
+  overtime_records OvertimeRecord[]
 
   @@unique([tenant_id, nip])
   @@unique([tenant_id, email])
@@ -323,6 +325,7 @@ model AttendanceRecord {
   employee         Employee @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
   office_location  OfficeLocation? @relation(fields: [office_location_id], references: [location_id], onDelete: SetNull)
   selfie_uploads   SelfieUpload[]
+  overtime_records OvertimeRecord[]
 
   @@index([tenant_id])
   @@index([employee_id])
@@ -349,6 +352,32 @@ model SelfieUpload {
   @@index([attendance_record_id])
   @@index([attendance_record_id, upload_type])
   @@map("selfie_uploads")
+}
+
+model OvertimeRecord {
+  overtime_id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  tenant_id            String
+  employee_id          String
+  attendance_record_id String?
+  start_time           DateTime
+  end_time             DateTime?
+  reason               String?
+  status               String   @default("pending") // 'pending', 'approved', 'rejected'
+  notes                String?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  // Relations
+  tenant               Tenant   @relation(fields: [tenant_id], references: [tenant_id], onDelete: Cascade)
+  employee             Employee @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade)
+  attendance_record    AttendanceRecord? @relation(fields: [attendance_record_id], references: [record_id], onDelete: SetNull)
+
+  @@index([tenant_id])
+  @@index([employee_id])
+  @@index([tenant_id, employee_id, start_time])
+  @@index([attendance_record_id])
+  @@index([status])
+  @@map("overtime_records")
 }
 
 // ============================================

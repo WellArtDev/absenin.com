@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
+import { Card } from '../../../components/Card';
+import { Button } from '../../../components/Button';
+import { Input } from '../../../components/Input';
 
 interface Tenant {
   tenant_id: string;
@@ -183,9 +186,11 @@ export default function TenantSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 text-blue-600 mr-3" />
-        <span className="text-gray-500">Memuat data...</span>
+      <div className="min-h-screen bg-ui-background flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin h-12 w-12 border-4 border-whatsapp-primary border-t-transparent rounded-full"></div>
+          <span className="text-ui-text-secondary">Memuat data...</span>
+        </div>
       </div>
     );
   }
@@ -196,217 +201,251 @@ export default function TenantSettingsPage() {
         <title>Pengaturan Tenant - Absenin</title>
       </Head>
 
-      <div className="mx-auto px-4 sm:px-6 lg:px-12 py-6">
-        {/* Breadcrumb */}
-        <nav className="flex mb-4" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2 text-sm">
-            <li>
-              <Link href="/dashboard" className="text-gray-500 hover:text-gray-700">
-                Dashboard
+      <div className="min-h-screen bg-ui-background">
+        {/* Header */}
+        <header className="bg-gradient-primary shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <nav className="flex items-center space-x-4 text-white/90 text-sm">
+              <Link href="/dashboard" className="hover:text-white transition-colors">
+                <span className="flex items-center space-x-2">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <span>Dashboard</span>
+                </span>
               </Link>
-            </li>
-            <li>/</li>
-            <li className="text-gray-900 font-medium">Pengaturan Tenant</li>
-          </ol>
-        </nav>
+              <span>/</span>
+              <span className="text-white font-medium">Pengaturan Tenant</span>
+            </nav>
+            <div className="mt-4">
+              <h1 className="text-2xl font-bold text-white">Pengaturan Tenant</h1>
+              <p className="text-white/80 text-sm mt-1">Kelola informasi dan pengaturan perusahaan Anda</p>
+            </div>
+          </div>
+        </header>
 
         {/* Toast Notification */}
         {toast && (
-          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+          <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg backdrop-blur-sm border ${
             toast.type === 'success'
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
+              ? 'bg-green-500/90 text-white border-green-400'
+              : 'bg-red-500/90 text-white border-red-400'
           }`}>
-            <div className="flex items-center">
+            <div className="flex items-center space-x-3">
+              {toast.type === 'success' ? (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
               <p className="text-sm font-medium">{toast.message}</p>
               <button
                 onClick={() => setToast(null)}
-                className="ml-auto pl-3 text-gray-400 hover:text-gray-600"
+                className="ml-4 text-white/70 hover:text-white"
               >
-                ✕
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
         )}
 
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Pengaturan Tenant</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Kelola informasi dan pengaturan perusahaan Anda
-          </p>
-        </div>
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Error Message */}
+          {error && (
+            <Card className="mb-6 p-4 bg-red-50 border-red-200">
+              <div className="flex items-center space-x-3">
+                <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </Card>
+          )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Tenant Info Card */}
+            <div className="lg:col-span-1">
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold text-ui-text-primary mb-4 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-whatsapp-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Informasi Tenant
+                </h2>
+                {tenant && (
+                  <div className="space-y-4">
+                    <Card glass className="p-4">
+                      <p className="text-xs text-ui-text-tertiary mb-1">Nama Tenant</p>
+                      <p className="text-sm font-medium text-ui-text-primary">{tenant.name}</p>
+                    </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Tenant Info Card */}
-          <div className="lg:col-span-1">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Informasi Tenant</h2>
-              {tenant && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Nama Tenant</p>
-                    <p className="text-sm text-gray-900">{tenant.name}</p>
+                    <Card glass className="p-4">
+                      <p className="text-xs text-ui-text-tertiary mb-1">Slug</p>
+                      <p className="text-sm font-medium text-ui-text-primary">{tenant.slug}</p>
+                    </Card>
+
+                    <Card glass className="p-4">
+                      <p className="text-xs text-ui-text-tertiary mb-1">Tenant ID</p>
+                      <p className="text-xs font-mono text-ui-text-primary bg-gray-100 px-2 py-1 rounded">{tenant.tenant_id}</p>
+                    </Card>
+
+                    <Card glass className="p-4">
+                      <p className="text-xs text-ui-text-tertiary mb-1">Dibuat</p>
+                      <p className="text-sm font-medium text-ui-text-primary">
+                        {new Date(tenant.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </Card>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Slug</p>
-                    <p className="text-sm text-gray-900">{tenant.slug}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Tenant ID</p>
-                    <p className="text-sm text-gray-900 font-mono text-xs">{tenant.tenant_id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Dibuat</p>
-                    <p className="text-sm text-gray-900">
-                      {new Date(tenant.created_at).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              )}
+                )}
+              </Card>
             </div>
-          </div>
 
-          {/* Settings Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white shadow rounded-lg">
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                <h2 className="text-lg font-medium text-gray-900">Pengaturan Perusahaan</h2>
+            {/* Settings Form */}
+            <div className="lg:col-span-2">
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold text-ui-text-primary mb-6 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-whatsapp-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Pengaturan Perusahaan
+                </h2>
 
-                {/* Company Name */}
-                <div>
-                  <label htmlFor="company_name" className="block text-sm font-medium text-gray-700">
-                    Nama Perusahaan
-                  </label>
-                  <input
-                    type="text"
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Company Name */}
+                  <Input
                     id="company_name"
+                    label="Nama Perusahaan"
+                    placeholder="Masukkan nama perusahaan"
                     value={formData.company_name}
                     onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   />
-                </div>
 
-                {/* Company Address */}
-                <div>
-                  <label htmlFor="company_address" className="block text-sm font-medium text-gray-700">
-                    Alamat Perusahaan
-                  </label>
-                  <textarea
+                  {/* Company Address */}
+                  <Input
                     id="company_address"
-                    rows={3}
+                    label="Alamat Perusahaan"
+                    placeholder="Masukkan alamat lengkap perusahaan"
                     value={formData.company_address}
                     onChange={(e) => setFormData({ ...formData, company_address: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    multiline
+                    rows={3}
                   />
-                </div>
 
-                {/* Company Phone & Email */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="company_phone" className="block text-sm font-medium text-gray-700">
-                      No. Telepon
-                    </label>
-                    <input
-                      type="text"
+                  {/* Company Phone & Email */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
                       id="company_phone"
+                      label="No. Telepon"
+                      placeholder="+62 xxx xxxx xxxx"
                       value={formData.company_phone}
                       onChange={(e) => setFormData({ ...formData, company_phone: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      icon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      }
                     />
-                  </div>
 
-                  <div>
-                    <label htmlFor="company_email" className="block text-sm font-medium text-gray-700">
-                      Email Perusahaan
-                    </label>
-                    <input
-                      type="email"
+                    <Input
                       id="company_email"
+                      label="Email Perusahaan"
+                      type="email"
+                      placeholder="perusahaan@email.com"
                       value={formData.company_email}
                       onChange={(e) => setFormData({ ...formData, company_email: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      icon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      }
                     />
                   </div>
-                </div>
 
-                {/* Working Days */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hari Kerja
-                  </label>
-                  <div className="grid grid-cols-7 gap-2">
-                    {days.map((day) => (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => handleWorkingDayToggle(day.value)}
-                        className={`px-3 py-2 text-xs font-medium rounded-md border ${
-                          formData.working_days.includes(day.value)
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {day.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Working Hours */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Working Days */}
                   <div>
-                    <label htmlFor="work_start_time" className="block text-sm font-medium text-gray-700">
-                      Jam Masuk
+                    <label className="block text-sm font-medium text-ui-text-secondary mb-3">
+                      Hari Kerja
                     </label>
-                    <input
-                      type="time"
+                    <div className="grid grid-cols-7 gap-2">
+                      {days.map((day) => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => handleWorkingDayToggle(day.value)}
+                          className={`px-2 py-3 text-xs font-medium rounded-lg border transition-all duration-200 ${
+                            formData.working_days.includes(day.value)
+                              ? 'bg-gradient-primary text-white border-whatsapp-primary shadow-lg'
+                              : 'bg-white text-ui-text-primary border-ui-border hover:border-whatsapp-primary hover:bg-whatsapp-light/30'
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Working Hours */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
                       id="work_start_time"
+                      label="Jam Masuk"
+                      type="time"
                       value={formData.work_start_time}
                       onChange={(e) => setFormData({ ...formData, work_start_time: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      icon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      }
                     />
-                  </div>
 
-                  <div>
-                    <label htmlFor="work_end_time" className="block text-sm font-medium text-gray-700">
-                      Jam Pulang
-                    </label>
-                    <input
-                      type="time"
+                    <Input
                       id="work_end_time"
+                      label="Jam Pulang"
+                      type="time"
                       value={formData.work_end_time}
                       onChange={(e) => setFormData({ ...formData, work_end_time: e.target.value })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      icon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      }
                     />
                   </div>
-                </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                  >
-                    {submitting ? 'Menyimpan...' : 'Simpan Pengaturan'}
-                  </button>
-                </div>
-              </form>
+                  {/* Submit Button */}
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-ui-border">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => router.push('/dashboard')}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      loading={submitting}
+                      className="min-w-[160px]"
+                    >
+                      {submitting ? 'Menyimpan...' : 'Simpan Pengaturan'}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </>
   );

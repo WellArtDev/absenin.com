@@ -8,6 +8,8 @@ import { CommandParams, CommandResult, ParsedMessage } from '../types';
 import { HadirCommand } from '../commands/HadirCommand';
 import { PulangCommand } from '../commands/PulangCommand';
 import { StatusCommand } from '../commands/StatusCommand';
+import { LemburCommand } from '../commands/LemburCommand';
+import { SelesaiLemburCommand } from '../commands/SelesaiLemburCommand';
 
 export class CommandDispatcher {
   private prisma: PrismaClient;
@@ -23,6 +25,8 @@ export class CommandDispatcher {
     this.handlers.set('HADIR', new HadirCommand());
     this.handlers.set('PULANG', new PulangCommand());
     this.handlers.set('STATUS', new StatusCommand());
+    this.handlers.set('LEMBUR', new LemburCommand());
+    this.handlers.set('SELESAI LEMBUR', new SelesaiLemburCommand());
   }
 
   /**
